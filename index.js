@@ -1,8 +1,11 @@
-import express from 'express';
-import cors from 'cors';
-import bodyParser from 'body-parser';
-import { v1 as uuidv1 } from 'uuid';
-import mysql from 'mysql';
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const { v1: uuidv1 } = require('uuid');
+const mysql = require('mysql');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const app = express();
 
@@ -12,14 +15,28 @@ app.use(bodyParser.json());
 const db = mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB
+    password: process.env.DB_PASS
 });
+
+const dbName = 'todo_db';
+const tableName = 'todos';
 
 db.connect(error => {
     if (error) throw error.message;
+    console.log('Connected to the MYSQL database');
 
-    console.log('Successfully connected to the database.');
+    db.query(`CREATE DATABASE IF NOT EXISTS ${dbName}`, function (err, result) {
+        if (err) throw err;
+        console.log(`Database created: ${dbName}`);
+    });
+    db.query(`USE ${dbName}`, function (err, result) {
+        if (err) throw err;
+        console.log(`Using ${dbName} database`);
+    });
+    db.query(`CREATE TABLE IF NOT EXISTS todos (id VARCHAR(255), todo VARCHAR(255))`, function (err, result) {
+        if (err) throw err;
+        console.log(`Table created: ${tableName}`);
+    });
 });
 
 app.listen(8080, function() {
@@ -27,7 +44,7 @@ app.listen(8080, function() {
 });
 
 app.get('/todos', function (req, res) {
-    db.query('SELECT * FROM todos', (err, result) => {
+    db.query(`SELECT * FROM ${tableName}`, (err, result) => {
         if (err) res.status(500).send(err.message);
 
         console.log('List of todos: ', result);
@@ -39,7 +56,7 @@ app.post('/todos', function (req, res) {
     const { todo } = req.body;
     const id = uuidv1();
 
-    db.query(`INSERT INTO todos (id, todo) VALUES ('${id}', '${todo}')`, (err, result) => {
+    db.query(`INSERT INTO ${tableName} (id, todo) VALUES ('${id}', '${todo}')`, (err, result) => {
         if (err) res.status(500).send(err.message);
 
         console.log(`Added todo ${todo} with id=${id}: `, result);
@@ -50,7 +67,7 @@ app.post('/todos', function (req, res) {
 app.delete('/todos', function (req, res) {
     const { id } = req.body;
 
-    db.query(`DELETE FROM todos WHERE id = '${id}';`, (err, result) => {
+    db.query(`DELETE FROM ${tableName} WHERE id = '${id}';`, (err, result) => {
         if (err) res.status(500).send(err.message);
 
         console.log(`Deleted todo with id=${id}: `, result);
