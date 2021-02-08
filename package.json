@@ -4,7 +4,7 @@
   "description": "Backend to the todo test app",
   "main": "index.js",
   "scripts": {
-    "start": "DB_HOST=localhost DB_USER=root DB_PASS=admin DB=test node index.js",
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
